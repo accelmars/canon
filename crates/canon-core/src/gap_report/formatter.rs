@@ -56,14 +56,13 @@ impl GapReportFormatter {
     /// Write one file per gap row. Returns the number of files written.
     pub fn write(&self, rows: &[GapReportRow]) -> Result<usize, GapReportError> {
         std::fs::create_dir_all(&self.gap_dir)?;
-        let mut n = self.next_n;
-        for row in rows {
+        for (i, row) in rows.iter().enumerate() {
+            let n = self.next_n + i as u32;
             let slug = make_slug(&row.description);
             let filename = format!("CANON-{:03}-{}.md", n, slug);
             let file_path = self.gap_dir.join(&filename);
             let content = render_gap_file(row, n);
             std::fs::write(&file_path, &content)?;
-            n += 1;
         }
         Ok(rows.len())
     }
