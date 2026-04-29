@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CFC-101 — canon audit subcommand (template-driven read-only diff)
+
+- `canon audit <corpus-path> --template <name|path> [--format table|json|markdown]`: walks a corpus directory, loads a structure template via the CFC-050 loader, and reports all drift against that template's folder rules, frontmatter schema, and invariants.
+- Exit codes: 0 = conformant, 1 = blocking drift found, 2 = error.
+- `canon-core::audit` module: `run_audit(corpus_root, template)` → `Vec<DriftEntry>`.
+- `DriftCategory` enum: `FolderShape`, `MissingIndex`, `FrontmatterRequiredMissing`, `FrontmatterTypeWrong`, `FrontmatterValueInvalid`, `GraduationCandidate`, `ContentSplitSuggested`, `UnknownFieldInfo` (informational), `InvariantViolation`.
+- `audit::folder`: numbered-tier and flat folder-shape checks + `_INDEX.md` presence.
+- `audit::frontmatter`: YAML frontmatter parser + JSON-Schema-style validator (required fields, type checks, enum checks, allOf conditions).
+- `audit::invariants`: graduation-candidate heuristic (>500 lines), content-split heuristic (≥4 H2 sections with `atomic_file_gate`), gaps-folder-as-file invariant.
+- `canon-core::cli::audit`: `run_impl` follows Rule 13 (CWD-relative path resolution, injected writers for testability).
+- `tests/audit_baselines.rs`: 16 integration tests — clean baseline, gateway-engine drift baseline, 9 per-DriftCategory synthetic fixtures, 2 error paths, 2 format-flag tests.
+
+
 ### Added — CFC-051 — built-in canon-default template (canon's existing canonical shape)
 
 - `templates/canon-default/manifest.toml`: built-in template encoding canon v0.1.0's output shape — `custom` folder shape (atoms/, domains/, load-packs/, archive/, .canon/), `gaps` gap-report folder, `atomic_file_gate = false`.
