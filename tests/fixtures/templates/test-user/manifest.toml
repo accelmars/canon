@@ -1,0 +1,10 @@
+name = "test-user"
+version = "0.1.0"
+description = "User-tier test template fixture"
+
+[folder_rules]
+shape = "by-domain"
+
+[invariants]
+index_required = false
+atomic_file_gate = false

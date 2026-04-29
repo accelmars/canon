@@ -1,0 +1,10 @@
+name = "test-builtin"
+version = "0.1.0"
+description = "Built-in test template fixture"
+
+[folder_rules]
+shape = "flat"
+
+[invariants]
+index_required = false
+atomic_file_gate = false

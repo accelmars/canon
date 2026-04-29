@@ -8,3 +8,5 @@ repository.workspace = true
 description = "Open-layer canonicalization primitives"
 
 [dependencies]
+serde = { workspace = true }
+toml = { workspace = true }

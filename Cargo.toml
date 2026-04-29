@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/canon-core"]
+members = [".", "crates/canon-core"]
 resolver = "2"
 
 [workspace.package]
@@ -10,3 +10,21 @@ authors = ["AccelMars"]
 repository = "https://github.com/accelmars/canon"
 
 [workspace.dependencies]
+canon-core = { path = "crates/canon-core" }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+[package]
+name = "canon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Canon canonicalization CLI"
+
+[dependencies]
+canon-core = { workspace = true }
+
+[dev-dependencies]
+canon-core = { workspace = true }

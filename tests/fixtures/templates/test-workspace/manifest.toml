@@ -1,0 +1,11 @@
+name = "test-workspace"
+version = "0.1.0"
+description = "Workspace-tier test template fixture"
+
+[folder_rules]
+shape = "numbered-tiers"
+
+[invariants]
+index_required = true
+gaps_folder = "41-gaps"
+atomic_file_gate = true
