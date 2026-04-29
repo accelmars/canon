@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CFC-302 — `canon template list/show/validate/install`
+
+- `canon template list`: three-section output (BUILT-IN / WORKSPACE / USER) per `anchor plan list` style — each template shows name + description.
+- `canon template show <name> [--format table|json]`: prints manifest details for a named or path-specified template; `--format json` emits structured JSON.
+- `canon template validate <path>`: validates a template directory; exit 0 = valid, 1 = invalid (with field/line info), 2 = error (unreadable).
+- `canon template install <source>`: installs a template to `~/.config/canon/templates/<name>/`; supports local paths (recursive copy) and git URLs (`git clone` subprocess via `GitCloner` trait). Rejects already-installed names.
+- `GitCloner` trait boundary (Rule 1) — `DefaultGitCloner` (subprocess, SPAWN-SAFE annotated), `MockGitCloner` in test helpers; `RealImpl` wired only at CLI entry.
+- Three-tier resolution in `list` and `show` uses `production_builtins()` + `TemplateLoader::with_builtins` — workspace and user tiers populated from injected paths (Rule 13 `run_impl` pattern).
+- `copy_dir_recursive` uses `entry.file_type()` per Rule 12 — no symlink following.
+- Security note: v1 install is unsigned and user-local. Registry, signing, and trust model are out of scope.
+- `tests/template_namespace.rs`: 10 integration tests — list (built-in section, workspace section), show (table + JSON), validate (valid, malformed, missing schema), install (local copy, already-exists reject, git URL smoke test with mock cloner).
+
 ### Added — CFC-301 — `canon align --apply` orchestrator (audit + plan + apply via anchor + gap-report formatter)
 
 - `canon align <corpus-path> --template <name|path> --apply [--gap-report-dir <path>]`: drives the full canonicalization pipeline end-to-end.

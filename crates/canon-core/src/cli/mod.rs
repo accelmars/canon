@@ -1,6 +1,7 @@
 pub mod align;
 pub mod align_apply;
 pub mod audit;
+pub mod template;
 
 use audit::OutputFormat;
 
@@ -24,10 +25,11 @@ pub fn run_with_io(
     match subcommand.as_str() {
         "audit" => parse_audit(&args[1..], out, err),
         "align" => parse_align(&args[1..], out, err),
+        "template" => template::run(&args[1..], out, err),
         other => {
             let _ = writeln!(
                 err,
-                "canon: unknown subcommand '{}'. Try 'canon audit --help' or 'canon align --help'.",
+                "canon: unknown subcommand '{}'. Try 'canon audit --help', 'canon align --help', or 'canon template --help'.",
                 other
             );
             2
