@@ -15,15 +15,37 @@ use anchor_runner::AnchorRunner;
 
 #[derive(Debug)]
 pub enum StepOutcome {
-    Audit { drift_count: usize, blocking: bool },
-    Plan { main_ops: usize, fm_ops: usize, gap_rows: usize },
+    Audit {
+        drift_count: usize,
+        blocking: bool,
+    },
+    Plan {
+        main_ops: usize,
+        fm_ops: usize,
+        gap_rows: usize,
+    },
     ApplySkipped,
-    AnchorApply { main_plan_path: PathBuf },
-    AnchorApplyFailed { exit_code: i32, diagnostic: String },
-    AnchorFmMigrate { fm_plan_path: PathBuf },
-    AnchorFmMigrateFailed { exit_code: i32, diagnostic: String },
-    GapReport { files_written: usize, gap_dir: PathBuf },
-    ReAudit { residual_drift: usize },
+    AnchorApply {
+        main_plan_path: PathBuf,
+    },
+    AnchorApplyFailed {
+        exit_code: i32,
+        diagnostic: String,
+    },
+    AnchorFmMigrate {
+        fm_plan_path: PathBuf,
+    },
+    AnchorFmMigrateFailed {
+        exit_code: i32,
+        diagnostic: String,
+    },
+    GapReport {
+        files_written: usize,
+        gap_dir: PathBuf,
+    },
+    ReAudit {
+        residual_drift: usize,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -76,8 +98,7 @@ pub struct OrchestratorConfig {
 // ---------------------------------------------------------------------------
 
 /// Monotonic counter for unique temp file names — safe across parallel test threads.
-static PLAN_INVOCATION: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
+static PLAN_INVOCATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 /// Generate unique temp file paths per invocation so parallel test runs don't collide.
 fn unique_tmp_plan_paths() -> (std::path::PathBuf, std::path::PathBuf) {
@@ -117,8 +138,14 @@ pub fn run_pipeline(config: &OrchestratorConfig, runner: &dyn AnchorRunner) -> O
         }
     };
     let blocking = audit::has_blocking_drift(&drift);
-    let drift_count = drift.iter().filter(|e| !e.category.is_informational()).count();
-    steps.push(StepOutcome::Audit { drift_count, blocking });
+    let drift_count = drift
+        .iter()
+        .filter(|e| !e.category.is_informational())
+        .count();
+    steps.push(StepOutcome::Audit {
+        drift_count,
+        blocking,
+    });
 
     // ------------------------------------------------------------------
     // Step 2: Plan emit
@@ -215,7 +242,10 @@ pub fn run_pipeline(config: &OrchestratorConfig, runner: &dyn AnchorRunner) -> O
             return OrchestratorOutcome::Failed {
                 steps,
                 step_name: "anchor-fm-migrate".to_string(),
-                error: format!("anchor frontmatter migrate exited {} — {}", e.exit_code, e.diagnostic),
+                error: format!(
+                    "anchor frontmatter migrate exited {} — {}",
+                    e.exit_code, e.diagnostic
+                ),
             };
         }
     }
@@ -253,8 +283,13 @@ pub fn run_pipeline(config: &OrchestratorConfig, runner: &dyn AnchorRunner) -> O
             };
         }
     };
-    let residual = re_drift.iter().filter(|e| !e.category.is_informational()).count();
-    steps.push(StepOutcome::ReAudit { residual_drift: residual });
+    let residual = re_drift
+        .iter()
+        .filter(|e| !e.category.is_informational())
+        .count();
+    steps.push(StepOutcome::ReAudit {
+        residual_drift: residual,
+    });
 
     let exit_code = if residual > 0 { 1 } else { 0 };
     OrchestratorOutcome::Complete { steps, exit_code }
@@ -267,7 +302,10 @@ pub fn run_pipeline(config: &OrchestratorConfig, runner: &dyn AnchorRunner) -> O
 pub fn print_pipeline_summary(outcome: &OrchestratorOutcome, out: &mut dyn std::io::Write) {
     for step in outcome.steps() {
         match step {
-            StepOutcome::Audit { drift_count, blocking } => {
+            StepOutcome::Audit {
+                drift_count,
+                blocking,
+            } => {
                 let _ = writeln!(
                     out,
                     "  audit: {} blocking drift item(s){}",
@@ -275,7 +313,11 @@ pub fn print_pipeline_summary(outcome: &OrchestratorOutcome, out: &mut dyn std::
                     if *blocking { " [blocking]" } else { "" }
                 );
             }
-            StepOutcome::Plan { main_ops, fm_ops, gap_rows } => {
+            StepOutcome::Plan {
+                main_ops,
+                fm_ops,
+                gap_rows,
+            } => {
                 let _ = writeln!(
                     out,
                     "  plan: {} structural op(s), {} FM op(s), {} gap row(s)",
@@ -297,7 +339,10 @@ pub fn print_pipeline_summary(outcome: &OrchestratorOutcome, out: &mut dyn std::
             StepOutcome::AnchorFmMigrateFailed { diagnostic, .. } => {
                 let _ = writeln!(out, "  anchor frontmatter migrate: FAILED — {diagnostic}");
             }
-            StepOutcome::GapReport { files_written, gap_dir } => {
+            StepOutcome::GapReport {
+                files_written,
+                gap_dir,
+            } => {
                 let _ = writeln!(
                     out,
                     "  gap-report: {} file(s) written to '{}'",
@@ -370,7 +415,10 @@ shape = "numbered-tiers"
         let runner = MockAnchorRunner::succeeds();
         let outcome = run_pipeline(&config, &runner);
         assert_eq!(outcome.exit_code(), 0);
-        let has_skipped = outcome.steps().iter().any(|s| matches!(s, StepOutcome::ApplySkipped));
+        let has_skipped = outcome
+            .steps()
+            .iter()
+            .any(|s| matches!(s, StepOutcome::ApplySkipped));
         assert!(has_skipped, "dry-run should have ApplySkipped step");
     }
 
@@ -380,7 +428,10 @@ shape = "numbered-tiers"
         let runner = MockAnchorRunner::succeeds();
         run_pipeline(&config, &runner);
         // gap_dir should not exist (nothing written in dry-run)
-        assert!(!config.gap_report_dir.exists(), "no files should be written in dry-run");
+        assert!(
+            !config.gap_report_dir.exists(),
+            "no files should be written in dry-run"
+        );
     }
 
     #[test]
@@ -403,6 +454,9 @@ shape = "numbered-tiers"
             .flatten()
             .filter(|e| e.file_name().to_string_lossy().starts_with("CANON-"))
             .collect();
-        assert!(gap_files.is_empty(), "clean corpus should produce zero gap files");
+        assert!(
+            gap_files.is_empty(),
+            "clean corpus should produce zero gap files"
+        );
     }
 }

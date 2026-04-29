@@ -103,7 +103,13 @@ fn parse_canon_number(name: &str) -> Option<u32> {
 fn make_slug(description: &str) -> String {
     let slug: String = description
         .chars()
-        .map(|c| if c.is_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
         .collect::<String>()
         .split('-')
         .filter(|s| !s.is_empty())
@@ -162,7 +168,11 @@ fn recommended_action(cat: &JudgmentCategory) -> &'static str {
 }
 
 fn render_gap_file(row: &GapReportRow, n: u32) -> String {
-    let title = format!("gap: {} in {}", category_tag(&row.category), row.path.display());
+    let title = format!(
+        "gap: {} in {}",
+        category_tag(&row.category),
+        row.path.display()
+    );
     let date = "2026-04-29"; // static for determinism; real executor passes today's date
     format!(
         "---\ntitle: \"{title}\"\ntype: gap\nengine: canon\npriority: medium\n\

@@ -87,11 +87,7 @@ fn setup_clean_corpus(dir: &TempDir) -> std::path::PathBuf {
     )
     .unwrap();
     std::fs::create_dir_all(corpus.join("41-gaps")).unwrap();
-    std::fs::write(
-        corpus.join("41-gaps/_INDEX.md"),
-        "---\ntitle: Gaps\n---\n",
-    )
-    .unwrap();
+    std::fs::write(corpus.join("41-gaps/_INDEX.md"), "---\ntitle: Gaps\n---\n").unwrap();
     corpus
 }
 
@@ -123,17 +119,24 @@ fn dry_run_drift_fixture_nothing_written_to_disk() {
     let outcome = run_pipeline(&config, &runner);
 
     // ApplySkipped step present — confirms dry-run path.
-    let skipped = outcome.steps().iter().any(|s| matches!(s, StepOutcome::ApplySkipped));
+    let skipped = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::ApplySkipped));
     assert!(skipped, "dry-run must have ApplySkipped step");
 
     // Nothing written to disk.
     assert!(
         !gap_dir.exists(),
-        "gap dir must not be created in dry-run; path={}", gap_dir.display()
+        "gap dir must not be created in dry-run; path={}",
+        gap_dir.display()
     );
 
     // Plan step shows non-zero drift.
-    let plan_step = outcome.steps().iter().find(|s| matches!(s, StepOutcome::Plan { .. }));
+    let plan_step = outcome
+        .steps()
+        .iter()
+        .find(|s| matches!(s, StepOutcome::Plan { .. }));
     assert!(plan_step.is_some(), "Plan step must be present");
 
     // Exit code 1: corpus has blocking drift (FolderShape, FM missing).
@@ -164,13 +167,29 @@ fn apply_small_fixture_produces_gap_file() {
     let outcome = run_pipeline(&config, &runner);
 
     // Pipeline should have AnchorApply, AnchorFmMigrate, GapReport, ReAudit steps.
-    let has_apply = outcome.steps().iter().any(|s| matches!(s, StepOutcome::AnchorApply { .. }));
-    let has_fm = outcome.steps().iter().any(|s| matches!(s, StepOutcome::AnchorFmMigrate { .. }));
-    let has_gap = outcome.steps().iter().any(|s| matches!(s, StepOutcome::GapReport { .. }));
-    let has_reaudit = outcome.steps().iter().any(|s| matches!(s, StepOutcome::ReAudit { .. }));
+    let has_apply = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::AnchorApply { .. }));
+    let has_fm = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::AnchorFmMigrate { .. }));
+    let has_gap = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::GapReport { .. }));
+    let has_reaudit = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::ReAudit { .. }));
     assert!(has_apply, "missing AnchorApply step");
     assert!(has_fm, "missing AnchorFmMigrate step");
-    assert!(has_gap, "missing GapReport step; steps={:?}", outcome.steps());
+    assert!(
+        has_gap,
+        "missing GapReport step; steps={:?}",
+        outcome.steps()
+    );
     assert!(has_reaudit, "missing ReAudit step");
 
     // At least one gap file produced for the graduation candidate.
@@ -181,13 +200,20 @@ fn apply_small_fixture_produces_gap_file() {
         .collect();
     assert!(
         !canon_files.is_empty(),
-        "expected ≥1 gap file in {}", gap_dir.display()
+        "expected ≥1 gap file in {}",
+        gap_dir.display()
     );
 
     // Gap file contains required frontmatter.
     let content = std::fs::read_to_string(canon_files[0].path()).unwrap();
-    assert!(content.contains("type: gap"), "gap file missing 'type: gap'");
-    assert!(content.contains("engine: canon"), "gap file missing 'engine: canon'");
+    assert!(
+        content.contains("type: gap"),
+        "gap file missing 'type: gap'"
+    );
+    assert!(
+        content.contains("engine: canon"),
+        "gap file missing 'engine: canon'"
+    );
     assert!(
         content.contains("source: canon-template-architecture-CFC-301"),
         "gap file missing source"
@@ -221,13 +247,22 @@ fn idempotence_clean_corpus_apply_is_noop() {
 
     // Zero plan ops.
     let plan = outcome.steps().iter().find_map(|s| {
-        if let StepOutcome::Plan { main_ops, fm_ops, gap_rows } = s {
+        if let StepOutcome::Plan {
+            main_ops,
+            fm_ops,
+            gap_rows,
+        } = s
+        {
             Some((*main_ops, *fm_ops, *gap_rows))
         } else {
             None
         }
     });
-    assert_eq!(plan, Some((0, 0, 0)), "clean corpus must produce zero plan ops");
+    assert_eq!(
+        plan,
+        Some((0, 0, 0)),
+        "clean corpus must produce zero plan ops"
+    );
 
     // Zero gap files written.
     let canon_files: Vec<_> = std::fs::read_dir(&gap_dir)
@@ -328,8 +363,14 @@ fn apply_failure_propagates_diagnostic_and_exit_nonzero() {
     );
 
     // Pipeline stopped — no GapReport step should follow a failed apply.
-    let has_gap = outcome.steps().iter().any(|s| matches!(s, StepOutcome::GapReport { .. }));
-    assert!(!has_gap, "GapReport must not be written after a failed apply");
+    let has_gap = outcome
+        .steps()
+        .iter()
+        .any(|s| matches!(s, StepOutcome::GapReport { .. }));
+    assert!(
+        !has_gap,
+        "GapReport must not be written after a failed apply"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -346,11 +387,7 @@ fn gap_report_naming_continues_across_runs() {
     let make_config = |dir: &TempDir, gap_dir: &std::path::Path| -> OrchestratorConfig {
         let corpus = dir.path().join("corpus-naming");
         std::fs::create_dir_all(corpus.join("analysis")).unwrap();
-        std::fs::write(
-            corpus.join("analysis/note.md"),
-            "---\ntype: note\n---\n",
-        )
-        .unwrap();
+        std::fs::write(corpus.join("analysis/note.md"), "---\ntype: note\n---\n").unwrap();
         let big = "# Big\n".to_string() + &"x\n".repeat(510);
         std::fs::write(corpus.join("big.md"), &big).unwrap();
         let loader = TemplateLoader::from_workspace_root(dir.path());
@@ -375,7 +412,10 @@ fn gap_report_naming_continues_across_runs() {
         .filter(|e| e.file_name().to_string_lossy().starts_with("CANON-"))
         .collect();
     let count_after_run1 = after_run1.len();
-    assert!(count_after_run1 > 0, "run 1 must produce at least one gap file");
+    assert!(
+        count_after_run1 > 0,
+        "run 1 must produce at least one gap file"
+    );
 
     // Run 2 (same gap dir — should continue numbering).
     let config2 = make_config(&dir, &gap_dir);

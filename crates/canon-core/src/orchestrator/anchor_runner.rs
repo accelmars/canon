@@ -204,7 +204,9 @@ mod tests {
         let runner = MockAnchorRunner::succeeds();
         assert!(runner.check_frontmatter_capability().is_ok());
         assert!(runner.run_apply(Path::new("/tmp/plan.toml")).is_ok());
-        assert!(runner.run_frontmatter_migrate(Path::new("/tmp/fm.toml")).is_ok());
+        assert!(runner
+            .run_frontmatter_migrate(Path::new("/tmp/fm.toml"))
+            .is_ok());
     }
 
     #[test]
