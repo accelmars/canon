@@ -1,0 +1,112 @@
+pub mod audit;
+
+use audit::OutputFormat;
+
+/// Parse CLI arguments and dispatch to the appropriate subcommand.
+///
+/// Returns exit code: 0 = success/conformant, 1 = drift found, 2 = error.
+pub fn run(args: &[String]) -> i32 {
+    run_with_io(args, &mut std::io::stdout(), &mut std::io::stderr())
+}
+
+/// Testable dispatch — accepts explicit output writers.
+pub fn run_with_io(
+    args: &[String],
+    out: &mut dyn std::io::Write,
+    err: &mut dyn std::io::Write,
+) -> i32 {
+    let Some(subcommand) = args.first() else {
+        let _ = writeln!(err, "canon: no subcommand given. Try 'canon audit --help'.");
+        return 2;
+    };
+    match subcommand.as_str() {
+        "audit" => parse_audit(&args[1..], out, err),
+        other => {
+            let _ = writeln!(
+                err,
+                "canon: unknown subcommand '{}'. Try 'canon audit --help'.",
+                other
+            );
+            2
+        }
+    }
+}
+
+fn parse_audit(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std::io::Write) -> i32 {
+    let mut corpus_path: Option<String> = None;
+    let mut template: Option<String> = None;
+    let mut format = OutputFormat::Table;
+    let mut i = 0;
+
+    while i < args.len() {
+        match args[i].as_str() {
+            "--template" | "-t" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --template requires a value");
+                    return 2;
+                }
+                template = Some(args[i].clone());
+            }
+            "--format" | "-f" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --format requires a value");
+                    return 2;
+                }
+                match args[i].parse::<OutputFormat>() {
+                    Ok(f) => format = f,
+                    Err(e) => {
+                        let _ = writeln!(err, "error: {}", e);
+                        return 2;
+                    }
+                }
+            }
+            "--help" | "-h" => {
+                print_audit_help(out);
+                return 0;
+            }
+            arg if !arg.starts_with('-') => {
+                if corpus_path.is_some() {
+                    let _ = writeln!(
+                        err,
+                        "error: unexpected positional argument '{}' (corpus-path already set)",
+                        arg
+                    );
+                    return 2;
+                }
+                corpus_path = Some(arg.to_string());
+            }
+            other => {
+                let _ = writeln!(err, "error: unknown flag '{}'", other);
+                return 2;
+            }
+        }
+        i += 1;
+    }
+
+    let Some(corpus) = corpus_path else {
+        let _ = writeln!(err, "error: <corpus-path> is required");
+        print_audit_help(err);
+        return 2;
+    };
+
+    let Some(tmpl) = template else {
+        let _ = writeln!(err, "error: --template is required");
+        print_audit_help(err);
+        return 2;
+    };
+
+    audit::run(&corpus, &tmpl, &format, out, err)
+}
+
+fn print_audit_help(out: &mut dyn std::io::Write) {
+    let _ = writeln!(
+        out,
+        "USAGE:\n  canon audit <corpus-path> --template <name|path> [--format table|json|markdown]\n\n\
+         ARGS:\n  <corpus-path>   Directory to audit\n\n\
+         OPTIONS:\n  --template, -t  Template name or explicit path (required)\n  \
+         --format, -f    Output format: table (default), json, markdown\n\n\
+         EXIT CODES:\n  0  No drift (conformant)\n  1  Drift found\n  2  Error"
+    );
+}

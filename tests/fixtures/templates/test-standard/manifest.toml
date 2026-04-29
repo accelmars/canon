@@ -1,0 +1,14 @@
+name = "test-standard"
+version = "0.1.0"
+description = "Minimal integration-test template — not for production use"
+
+[folder_rules]
+shape = "numbered-tiers"
+
+[frontmatter]
+schema = "frontmatter.schema.json"
+
+[invariants]
+index_required = true
+gaps_folder = "41-gaps"
+atomic_file_gate = true
