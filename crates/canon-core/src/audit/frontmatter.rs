@@ -31,11 +31,7 @@ pub fn parse_frontmatter(content: &str) -> Option<serde_yaml::Value> {
 /// `schema` is the parsed JSON Schema object (the full schema JSON, not just properties).
 /// Emits `FrontmatterRequiredMissing`, `FrontmatterTypeWrong`, `FrontmatterValueInvalid`,
 /// and `UnknownFieldInfo`.
-pub fn check_frontmatter(
-    path: &Path,
-    content: &str,
-    schema: Option<&Json>,
-) -> Vec<DriftEntry> {
+pub fn check_frontmatter(path: &Path, content: &str, schema: Option<&Json>) -> Vec<DriftEntry> {
     let mut entries = Vec::new();
 
     let Some(schema) = schema else {
@@ -104,10 +100,8 @@ pub fn check_frontmatter(
                 // Enum check.
                 if let Some(Json::Array(enum_vals)) = prop_schema.get("enum") {
                     if !enum_vals.contains(value) {
-                        let allowed: Vec<&str> = enum_vals
-                            .iter()
-                            .filter_map(|v| v.as_str())
-                            .collect();
+                        let allowed: Vec<&str> =
+                            enum_vals.iter().filter_map(|v| v.as_str()).collect();
                         entries.push(DriftEntry {
                             path: path.to_owned(),
                             category: DriftCategory::FrontmatterValueInvalid,
@@ -124,10 +118,7 @@ pub fn check_frontmatter(
                 entries.push(DriftEntry {
                     path: path.to_owned(),
                     category: DriftCategory::UnknownFieldInfo,
-                    message: format!(
-                        "field '{}' is not defined in the frontmatter schema",
-                        field
-                    ),
+                    message: format!("field '{}' is not defined in the frontmatter schema", field),
                 });
             }
         }
@@ -136,8 +127,7 @@ pub fn check_frontmatter(
     // Check allOf conditions (type-specific required fields).
     if let Some(Json::Array(all_of)) = schema.get("allOf") {
         for condition in all_of {
-            let (Some(if_clause), Some(then_clause)) =
-                (condition.get("if"), condition.get("then"))
+            let (Some(if_clause), Some(then_clause)) = (condition.get("if"), condition.get("then"))
             else {
                 continue;
             };
@@ -188,9 +178,9 @@ fn matches_if_clause(fm_obj: &serde_json::Map<String, Json>, if_clause: &Json) -
     };
 
     let required_ok = match if_clause.get("required") {
-        Some(Json::Array(required)) => required.iter().all(|r| {
-            matches!(r, Json::String(f) if fm_obj.contains_key(f))
-        }),
+        Some(Json::Array(required)) => required
+            .iter()
+            .all(|r| matches!(r, Json::String(f) if fm_obj.contains_key(f))),
         _ => true,
     };
 

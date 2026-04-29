@@ -45,10 +45,7 @@ pub fn check_folder_shape(corpus_root: &Path, template: &LoadedTemplate) -> Vec<
                         entries.push(DriftEntry {
                             path: entry.path(),
                             category: DriftCategory::MissingIndex,
-                            message: format!(
-                                "numbered folder '{}' is missing _INDEX.md",
-                                name
-                            ),
+                            message: format!("numbered folder '{}' is missing _INDEX.md", name),
                         });
                     }
                 }
@@ -64,10 +61,7 @@ pub fn check_folder_shape(corpus_root: &Path, template: &LoadedTemplate) -> Vec<
                     entries.push(DriftEntry {
                         path: entry.path(),
                         category: DriftCategory::FolderShape,
-                        message: format!(
-                            "flat template: subdirectory '{}' should not exist",
-                            name
-                        ),
+                        message: format!("flat template: subdirectory '{}' should not exist", name),
                     });
                 }
             }

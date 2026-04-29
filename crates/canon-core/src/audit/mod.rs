@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use serde_json::Value as Json;
 use walkdir::WalkDir;
 
-pub use drift::{DriftCategory, DriftEntry};
 use crate::template::{LoadedTemplate, TemplateError};
+pub use drift::{DriftCategory, DriftEntry};
 
 /// Errors that can occur during a corpus audit.
 #[derive(Debug)]
@@ -73,7 +73,11 @@ pub fn run_audit(
     }
 
     // Cross-file and heuristic invariant checks.
-    entries.extend(invariants::check_invariants(corpus_root, template, &md_files));
+    entries.extend(invariants::check_invariants(
+        corpus_root,
+        template,
+        &md_files,
+    ));
 
     Ok(entries)
 }
@@ -95,10 +99,7 @@ fn collect_md_files(corpus_root: &Path) -> Vec<PathBuf> {
         .filter(|e| {
             e.file_type().is_file()
                 && e.path().extension().and_then(|s| s.to_str()) == Some("md")
-                && !e
-                    .path()
-                    .components()
-                    .any(|c| c.as_os_str() == ".git")
+                && !e.path().components().any(|c| c.as_os_str() == ".git")
         })
         .map(|e| e.path().to_owned())
         .collect()

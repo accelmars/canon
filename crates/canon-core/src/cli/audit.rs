@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde_json::json;
 
 use crate::audit::{self, has_blocking_drift, DriftEntry};
-use crate::template::{TemplateLoader, TemplateError};
+use crate::template::{TemplateError, TemplateLoader};
 
 /// Output format for the audit report.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +117,11 @@ pub fn run_impl(
     // Emit output.
     emit_output(&entries, &corpus_path, format, out);
 
-    if has_blocking_drift(&entries) { 1 } else { 0 }
+    if has_blocking_drift(&entries) {
+        1
+    } else {
+        0
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +143,11 @@ fn emit_output(
 
 fn emit_table(entries: &[DriftEntry], corpus_path: &Path, out: &mut dyn Write) {
     if entries.is_empty() {
-        let _ = writeln!(out, "canon audit: no drift found in '{}'", corpus_path.display());
+        let _ = writeln!(
+            out,
+            "canon audit: no drift found in '{}'",
+            corpus_path.display()
+        );
         return;
     }
     let blocking: Vec<_> = entries
@@ -195,7 +203,10 @@ fn emit_json(entries: &[DriftEntry], corpus_path: &Path, out: &mut dyn Write) {
         })
         .collect();
 
-    let blocking_count = entries.iter().filter(|e| !e.category.is_informational()).count();
+    let blocking_count = entries
+        .iter()
+        .filter(|e| !e.category.is_informational())
+        .count();
     let output = json!({
         "corpus": corpus_path.to_string_lossy(),
         "blocking_count": blocking_count,
@@ -211,7 +222,10 @@ fn emit_json(entries: &[DriftEntry], corpus_path: &Path, out: &mut dyn Write) {
 }
 
 fn emit_markdown(entries: &[DriftEntry], corpus_path: &Path, out: &mut dyn Write) {
-    let blocking_count = entries.iter().filter(|e| !e.category.is_informational()).count();
+    let blocking_count = entries
+        .iter()
+        .filter(|e| !e.category.is_informational())
+        .count();
     if blocking_count == 0 {
         let _ = writeln!(
             out,

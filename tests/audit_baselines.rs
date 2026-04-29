@@ -65,7 +65,10 @@ fn clean_baseline_run_audit_returns_no_blocking_entries() {
         .load_by_name("accelmars-standard")
         .expect("accelmars-standard must resolve");
     let entries = run_audit(&corpus, &template).expect("audit must not error");
-    let blocking: Vec<_> = entries.iter().filter(|e| !e.category.is_informational()).collect();
+    let blocking: Vec<_> = entries
+        .iter()
+        .filter(|e| !e.category.is_informational())
+        .collect();
     assert!(
         blocking.is_empty(),
         "clean-corpus should have no blocking drift; got: {:?}",
@@ -110,11 +113,17 @@ fn folder_shape_drift_fires() {
     let template = loader.load_by_name("accelmars-standard").unwrap();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
-        entries.iter().any(|e| e.category == DriftCategory::FolderShape),
+        entries
+            .iter()
+            .any(|e| e.category == DriftCategory::FolderShape),
         "FolderShape must fire for folder-shape-drift fixture"
     );
     assert_eq!(
-        audit_fixture("folder-shape-drift", "accelmars-standard", &OutputFormat::Table),
+        audit_fixture(
+            "folder-shape-drift",
+            "accelmars-standard",
+            &OutputFormat::Table
+        ),
         1
     );
 }
@@ -126,7 +135,9 @@ fn missing_index_drift_fires() {
     let template = loader.load_by_name("accelmars-standard").unwrap();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
-        entries.iter().any(|e| e.category == DriftCategory::MissingIndex),
+        entries
+            .iter()
+            .any(|e| e.category == DriftCategory::MissingIndex),
         "MissingIndex must fire for missing-index fixture"
     );
     assert_eq!(
@@ -170,7 +181,11 @@ fn frontmatter_type_wrong_fires() {
         "FrontmatterTypeWrong must fire"
     );
     assert_eq!(
-        audit_fixture("frontmatter-type-wrong", "accelmars-standard", &OutputFormat::Table),
+        audit_fixture(
+            "frontmatter-type-wrong",
+            "accelmars-standard",
+            &OutputFormat::Table
+        ),
         1
     );
 }
@@ -211,7 +226,11 @@ fn graduation_candidate_fires() {
     );
     // GraduationCandidate is blocking — exit 1.
     assert_eq!(
-        audit_fixture("graduation-candidate", "accelmars-standard", &OutputFormat::Table),
+        audit_fixture(
+            "graduation-candidate",
+            "accelmars-standard",
+            &OutputFormat::Table
+        ),
         1
     );
 }
@@ -267,7 +286,11 @@ fn invariant_violation_fires() {
         "InvariantViolation must fire when gaps_folder is a file"
     );
     assert_eq!(
-        audit_fixture("invariant-violation", "accelmars-standard", &OutputFormat::Table),
+        audit_fixture(
+            "invariant-violation",
+            "accelmars-standard",
+            &OutputFormat::Table
+        ),
         1
     );
 }

@@ -32,11 +32,7 @@ pub fn run_with_io(
     }
 }
 
-fn parse_audit(
-    args: &[String],
-    out: &mut dyn std::io::Write,
-    err: &mut dyn std::io::Write,
-) -> i32 {
+fn parse_audit(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std::io::Write) -> i32 {
     let mut corpus_path: Option<String> = None;
     let mut template: Option<String> = None;
     let mut format = OutputFormat::Table;
