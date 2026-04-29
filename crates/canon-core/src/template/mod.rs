@@ -2,7 +2,9 @@ pub mod loader;
 pub mod manifest;
 pub mod validate;
 
-pub use loader::{ListedTemplate, LoadedTemplate, TemplateLoader, TemplateTier};
+pub use loader::{
+    production_builtins, ListedTemplate, LoadedTemplate, TemplateLoader, TemplateTier,
+};
 pub use manifest::{
     FolderRules, FolderShape, FrontmatterRef, Invariants, NamingConventions, TemplateManifest,
 };

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CFC-051 — built-in canon-default template (canon's existing canonical shape)
+
+- `templates/canon-default/manifest.toml`: built-in template encoding canon v0.1.0's output shape — `custom` folder shape (atoms/, domains/, load-packs/, archive/, .canon/), `gaps` gap-report folder, `atomic_file_gate = false`.
+- `templates/canon-default/frontmatter.schema.json`: JSON Schema 2020-12 covering generic atom-frontmatter fields (id, category, status, domain, title, version, created, updated, tags). No AccelMars-specific content.
+- `docs/built-in-templates.md`: documents each built-in template, its output shape, frontmatter schema fields, and invariants.
+- `canon-core::template::loader`: `production_builtins()` helper returns compiled built-in registry for test use.
+- `COMPILED_BUILT_INS` in loader: `canon-default` registered via `include_str!()` — available in every canon binary without filesystem installation.
+- `tests/built_in_templates.rs`: 5 integration tests — parse, format-spec conformance, list appearance, frontmatter schema reference, boundary (no accelmars strings in built-ins).
+
 ### Added — CFC-050 — structure-template format and loader (canon-core)
 
 - `docs/template-format.md`: public spec for the structure-template TOML format — manifest fields, folder shapes, frontmatter schema reference, invariants, three-tier resolution semantics, error model.

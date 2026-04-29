@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "canon-default-frontmatter",
+  "title": "Canon Default Frontmatter Schema",
+  "description": "Generic frontmatter schema for documents in canon's default output shape.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Atom identifier in domain::aspect::detail format.",
+      "pattern": "^[a-z0-9_-]+(:[a-z0-9_-]+)*$"
+    },
+    "category": {
+      "type": "string",
+      "description": "Knowledge category. C1–C8 are canon's standard tiers; other values are valid for community use.",
+      "pattern": "^C[1-9][0-9]?$|^[a-z][a-z0-9_-]*$"
+    },
+    "status": {
+      "type": "string",
+      "description": "Atom lifecycle state.",
+      "enum": ["active", "stale", "archived"]
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain this atom belongs to.",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title for display."
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema or document version (semver recommended)."
+    },
+    "created": {
+      "type": "string",
+      "description": "Creation date (ISO 8601).",
+      "format": "date"
+    },
+    "updated": {
+      "type": "string",
+      "description": "Last-updated date (ISO 8601).",
+      "format": "date"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Free-form tags for search and clustering.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,19 @@
+name = "canon-default"
+version = "0.1.0"
+description = "Canon's built-in output shape: atoms/, domains/, load-packs/, archive/, .canon/"
+
+[folder_rules]
+# Canon v0.1.0 emits a fixed hierarchical layout with named top-level folders.
+# Each top-level folder (atoms/, domains/, load-packs/) contains per-domain
+# subdirectories. This does not map to numbered-tiers, flat, or by-domain —
+# use custom to signal that drift reporting is structural-opaque for now.
+shape = "custom"
+
+[frontmatter]
+schema = "frontmatter.schema.json"
+
+[invariants]
+# Gap-report files land here when align cannot resolve a case mechanically.
+gaps_folder = "gaps"
+# Canon's output atoms.json files are multi-atom collections, not single-concept docs.
+atomic_file_gate = false
