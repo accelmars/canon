@@ -1,4 +1,5 @@
 pub mod align;
+pub mod align_apply;
 pub mod audit;
 
 use audit::OutputFormat;
@@ -107,6 +108,8 @@ fn parse_align(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std:
     let mut template: Option<String> = None;
     let mut output: Option<String> = None;
     let mut fm_output: Option<String> = None;
+    let mut apply = false;
+    let mut gap_report_dir: Option<String> = None;
     let mut i = 0;
 
     while i < args.len() {
@@ -135,8 +138,23 @@ fn parse_align(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std:
                 }
                 fm_output = Some(args[i].clone());
             }
+            "--apply" => {
+                apply = true;
+            }
+            "--gap-report-dir" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --gap-report-dir requires a value");
+                    return 2;
+                }
+                gap_report_dir = Some(args[i].clone());
+            }
             "--help" | "-h" => {
-                align::print_help(out);
+                if apply || output.is_none() {
+                    align_apply::print_help(out);
+                } else {
+                    align::print_help(out);
+                }
                 return 0;
             }
             arg if !arg.starts_with('-') => {
@@ -160,21 +178,28 @@ fn parse_align(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std:
 
     let Some(corpus) = corpus_path else {
         let _ = writeln!(err, "error: <corpus-path> is required");
-        align::print_help(err);
+        align_apply::print_help(err);
         return 2;
     };
     let Some(tmpl) = template else {
         let _ = writeln!(err, "error: --template is required");
-        align::print_help(err);
-        return 2;
-    };
-    let Some(out_path) = output else {
-        let _ = writeln!(err, "error: --output is required");
-        align::print_help(err);
+        align_apply::print_help(err);
         return 2;
     };
 
-    align::run(&corpus, &tmpl, &out_path, fm_output.as_deref(), out, err)
+    // Route: --apply (or no --output) → orchestrator path; --output → plan-emission path.
+    if apply || output.is_none() {
+        align_apply::run(&corpus, &tmpl, apply, gap_report_dir.as_deref(), out, err)
+    } else {
+        align::run(
+            &corpus,
+            &tmpl,
+            output.as_deref().unwrap(),
+            fm_output.as_deref(),
+            out,
+            err,
+        )
+    }
 }
 
 fn print_audit_help(out: &mut dyn std::io::Write) {

@@ -2,5 +2,7 @@
 
 pub mod audit;
 pub mod cli;
+pub mod gap_report;
+pub mod orchestrator;
 pub mod plan;
 pub mod template;
