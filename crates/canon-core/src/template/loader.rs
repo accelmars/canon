@@ -32,8 +32,19 @@ pub struct ListedTemplate {
 }
 
 /// Built-in templates compiled into the binary as static strings.
-/// CFC-051 registers the default canon shape here.
-static COMPILED_BUILT_INS: &[(&str, &str)] = &[];
+static COMPILED_BUILT_INS: &[(&str, &str)] = &[(
+    "canon-default",
+    include_str!("../../../../templates/canon-default/manifest.toml"),
+)];
+
+/// Returns the production built-in registry as an owned Vec.
+/// Used in tests to create a loader with production built-ins and controlled paths.
+pub fn production_builtins() -> Vec<(String, String)> {
+    COMPILED_BUILT_INS
+        .iter()
+        .map(|(n, t)| (n.to_string(), t.to_string()))
+        .collect()
+}
 
 pub struct TemplateLoader {
     builtins: Vec<(String, String)>,
