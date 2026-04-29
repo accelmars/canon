@@ -6,11 +6,12 @@ resolver = "2"
 version = "0.0.2"
 edition = "2021"
 license = "Apache-2.0"
-authors = ["AccelMars"]
+authors = ["AccelMars Co., Ltd."]
 repository = "https://github.com/accelmars/canon"
 
 [workspace.dependencies]
-canon-core = { path = "crates/canon-core" }
+# Alias keeps Rust code using canon_core:: unchanged; package name is accelmars-canon-core
+canon-core = { package = "accelmars-canon-core", path = "crates/canon-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 serde_yaml = { version = "0.9" }
@@ -19,13 +20,17 @@ walkdir = { version = "2" }
 tempfile = { version = "3" }
 
 [package]
-name = "canon"
+name = "accelmars-canon"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
 description = "Canon canonicalization CLI"
+
+[[bin]]
+name = "canon"
+path = "src/main.rs"
 
 [dependencies]
 canon-core = { workspace = true }
@@ -34,3 +39,13 @@ canon-core = { workspace = true }
 canon-core = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
