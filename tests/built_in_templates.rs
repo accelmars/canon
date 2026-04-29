@@ -27,11 +27,17 @@ fn canon_default_manifest_matches_format_spec() {
 
     assert_eq!(t.manifest.name, "canon-default");
     assert!(!t.manifest.version.is_empty(), "version must be present");
-    assert!(!t.manifest.description.is_empty(), "description must be present");
+    assert!(
+        !t.manifest.description.is_empty(),
+        "description must be present"
+    );
 
     // format spec: folder_rules.shape is one of the defined shapes
-    assert_eq!(t.manifest.folder_rules.shape, FolderShape::Custom,
-        "canon-default uses custom shape (mixed named top-level folders)");
+    assert_eq!(
+        t.manifest.folder_rules.shape,
+        FolderShape::Custom,
+        "canon-default uses custom shape (mixed named top-level folders)"
+    );
 
     // invariants: gaps_folder must be non-empty if specified
     if let Some(ref inv) = t.manifest.invariants {
@@ -56,7 +62,10 @@ fn canon_default_appears_in_template_list_as_builtin() {
         .expect("canon-default should appear in template list");
 
     assert_eq!(entry.tier, TemplateTier::BuiltIn);
-    assert!(!entry.description.is_empty(), "listed template should have a description");
+    assert!(
+        !entry.description.is_empty(),
+        "listed template should have a description"
+    );
 }
 
 #[test]
@@ -66,7 +75,9 @@ fn canon_default_frontmatter_schema_is_referenced() {
         .load_by_name("canon-default")
         .expect("canon-default should load");
 
-    let fm = t.manifest.frontmatter
+    let fm = t
+        .manifest
+        .frontmatter
         .expect("canon-default should reference a frontmatter schema");
     assert_eq!(fm.schema, "frontmatter.schema.json");
 }
