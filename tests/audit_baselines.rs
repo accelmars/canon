@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use canon_core::audit::{run_audit, DriftCategory};
 use canon_core::cli::audit::{run_impl, OutputFormat};
-use canon_core::template::TemplateLoader;
+use canon_core::template::{LoadedTemplate, TemplateLoader};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,20 +25,29 @@ fn fixtures_dir() -> PathBuf {
     canon_dir().join("tests/fixtures/audit")
 }
 
-fn template_loader() -> TemplateLoader {
-    TemplateLoader::from_workspace_root(&workspace_root())
+/// Self-contained test template bundled inside the canon repo.
+fn test_template_dir() -> PathBuf {
+    canon_dir().join("tests/fixtures/templates/test-standard")
 }
 
-/// Run `run_impl` against a named fixture directory, using real workspace_root for
-/// template resolution.
-fn audit_fixture(fixture_name: &str, template_spec: &str, format: &OutputFormat) -> i32 {
+/// Load the bundled test template via an explicit path — no workspace resolution.
+fn load_test_template() -> LoadedTemplate {
+    let loader = TemplateLoader::from_workspace_root(&canon_dir());
+    loader
+        .load_by_path(&test_template_dir())
+        .expect("tests/fixtures/templates/test-standard must exist")
+}
+
+/// Run `run_impl` against a named fixture directory using the bundled test template.
+fn audit_fixture(fixture_name: &str, format: &OutputFormat) -> i32 {
     let corpus = fixtures_dir().join(fixture_name);
+    let template_spec = test_template_dir();
     let ws = workspace_root();
     let mut out = Vec::<u8>::new();
     let mut err = Vec::<u8>::new();
     run_impl(
         corpus.to_str().unwrap(),
-        template_spec,
+        template_spec.to_str().unwrap(),
         format,
         &ws,
         &ws,
@@ -53,17 +62,14 @@ fn audit_fixture(fixture_name: &str, template_spec: &str, format: &OutputFormat)
 
 #[test]
 fn clean_baseline_exits_0() {
-    let code = audit_fixture("clean-corpus", "accelmars-standard", &OutputFormat::Table);
+    let code = audit_fixture("clean-corpus", &OutputFormat::Table);
     assert_eq!(code, 0, "clean-corpus should produce no blocking drift");
 }
 
 #[test]
 fn clean_baseline_run_audit_returns_no_blocking_entries() {
     let corpus = fixtures_dir().join("clean-corpus");
-    let loader = template_loader();
-    let template = loader
-        .load_by_name("accelmars-standard")
-        .expect("accelmars-standard must resolve");
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).expect("audit must not error");
     let blocking: Vec<_> = entries
         .iter()
@@ -109,8 +115,7 @@ fn drift_baseline_gateway_engine_exits_1() {
 #[test]
 fn folder_shape_drift_fires() {
     let corpus = fixtures_dir().join("folder-shape-drift");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -118,21 +123,13 @@ fn folder_shape_drift_fires() {
             .any(|e| e.category == DriftCategory::FolderShape),
         "FolderShape must fire for folder-shape-drift fixture"
     );
-    assert_eq!(
-        audit_fixture(
-            "folder-shape-drift",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
-        1
-    );
+    assert_eq!(audit_fixture("folder-shape-drift", &OutputFormat::Table), 1);
 }
 
 #[test]
 fn missing_index_drift_fires() {
     let corpus = fixtures_dir().join("missing-index");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -140,17 +137,13 @@ fn missing_index_drift_fires() {
             .any(|e| e.category == DriftCategory::MissingIndex),
         "MissingIndex must fire for missing-index fixture"
     );
-    assert_eq!(
-        audit_fixture("missing-index", "accelmars-standard", &OutputFormat::Table),
-        1
-    );
+    assert_eq!(audit_fixture("missing-index", &OutputFormat::Table), 1);
 }
 
 #[test]
 fn frontmatter_required_missing_fires() {
     let corpus = fixtures_dir().join("frontmatter-required-missing");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -159,11 +152,7 @@ fn frontmatter_required_missing_fires() {
         "FrontmatterRequiredMissing must fire"
     );
     assert_eq!(
-        audit_fixture(
-            "frontmatter-required-missing",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
+        audit_fixture("frontmatter-required-missing", &OutputFormat::Table),
         1
     );
 }
@@ -171,8 +160,7 @@ fn frontmatter_required_missing_fires() {
 #[test]
 fn frontmatter_type_wrong_fires() {
     let corpus = fixtures_dir().join("frontmatter-type-wrong");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -181,11 +169,7 @@ fn frontmatter_type_wrong_fires() {
         "FrontmatterTypeWrong must fire"
     );
     assert_eq!(
-        audit_fixture(
-            "frontmatter-type-wrong",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
+        audit_fixture("frontmatter-type-wrong", &OutputFormat::Table),
         1
     );
 }
@@ -193,8 +177,7 @@ fn frontmatter_type_wrong_fires() {
 #[test]
 fn frontmatter_value_invalid_fires() {
     let corpus = fixtures_dir().join("frontmatter-value-invalid");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -203,11 +186,7 @@ fn frontmatter_value_invalid_fires() {
         "FrontmatterValueInvalid must fire"
     );
     assert_eq!(
-        audit_fixture(
-            "frontmatter-value-invalid",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
+        audit_fixture("frontmatter-value-invalid", &OutputFormat::Table),
         1
     );
 }
@@ -215,8 +194,7 @@ fn frontmatter_value_invalid_fires() {
 #[test]
 fn graduation_candidate_fires() {
     let corpus = fixtures_dir().join("graduation-candidate");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -224,22 +202,18 @@ fn graduation_candidate_fires() {
             .any(|e| e.category == DriftCategory::GraduationCandidate),
         "GraduationCandidate must fire for file > 500 lines"
     );
-    // GraduationCandidate is blocking — exit 1.
+    // GraduationCandidate is informational — exits 0.
     assert_eq!(
-        audit_fixture(
-            "graduation-candidate",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
-        1
+        audit_fixture("graduation-candidate", &OutputFormat::Table),
+        0,
+        "GraduationCandidate is informational and must not cause exit 1"
     );
 }
 
 #[test]
 fn content_split_suggested_fires() {
     let corpus = fixtures_dir().join("content-split");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -247,17 +221,18 @@ fn content_split_suggested_fires() {
             .any(|e| e.category == DriftCategory::ContentSplitSuggested),
         "ContentSplitSuggested must fire for file with 4+ H2 sections"
     );
+    // ContentSplitSuggested is informational — exits 0.
     assert_eq!(
-        audit_fixture("content-split", "accelmars-standard", &OutputFormat::Table),
-        1
+        audit_fixture("content-split", &OutputFormat::Table),
+        0,
+        "ContentSplitSuggested is informational and must not cause exit 1"
     );
 }
 
 #[test]
 fn unknown_field_info_fires() {
     let corpus = fixtures_dir().join("unknown-field");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -267,7 +242,7 @@ fn unknown_field_info_fires() {
     );
     // UnknownFieldInfo is informational — exits 0.
     assert_eq!(
-        audit_fixture("unknown-field", "accelmars-standard", &OutputFormat::Table),
+        audit_fixture("unknown-field", &OutputFormat::Table),
         0,
         "unknown field is informational and must not cause exit 1"
     );
@@ -276,8 +251,7 @@ fn unknown_field_info_fires() {
 #[test]
 fn invariant_violation_fires() {
     let corpus = fixtures_dir().join("invariant-violation");
-    let loader = template_loader();
-    let template = loader.load_by_name("accelmars-standard").unwrap();
+    let template = load_test_template();
     let entries = run_audit(&corpus, &template).unwrap();
     assert!(
         entries
@@ -286,11 +260,7 @@ fn invariant_violation_fires() {
         "InvariantViolation must fire when gaps_folder is a file"
     );
     assert_eq!(
-        audit_fixture(
-            "invariant-violation",
-            "accelmars-standard",
-            &OutputFormat::Table
-        ),
+        audit_fixture("invariant-violation", &OutputFormat::Table),
         1
     );
 }
@@ -346,12 +316,13 @@ fn nonexistent_template_exits_2() {
 #[test]
 fn format_json_produces_parseable_json() {
     let corpus = fixtures_dir().join("folder-shape-drift");
+    let template_spec = test_template_dir();
     let ws = workspace_root();
     let mut out = Vec::<u8>::new();
     let mut err = Vec::<u8>::new();
     let code = run_impl(
         corpus.to_str().unwrap(),
-        "accelmars-standard",
+        template_spec.to_str().unwrap(),
         &OutputFormat::Json,
         &ws,
         &ws,
@@ -375,12 +346,13 @@ fn format_json_produces_parseable_json() {
 #[test]
 fn format_markdown_produces_table() {
     let corpus = fixtures_dir().join("folder-shape-drift");
+    let template_spec = test_template_dir();
     let ws = workspace_root();
     let mut out = Vec::<u8>::new();
     let mut err = Vec::<u8>::new();
     let code = run_impl(
         corpus.to_str().unwrap(),
-        "accelmars-standard",
+        template_spec.to_str().unwrap(),
         &OutputFormat::Markdown,
         &ws,
         &ws,
