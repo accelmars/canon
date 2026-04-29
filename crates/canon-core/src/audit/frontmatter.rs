@@ -15,10 +15,8 @@ pub fn parse_frontmatter(content: &str) -> Option<serde_yaml::Value> {
     // Accept `---\n` or `--- \n` (trailing space) after the opening fence.
     let rest = if let Some(r) = rest.strip_prefix('\n') {
         r
-    } else if let Some(r) = rest.strip_prefix("\r\n") {
-        r
     } else {
-        return None;
+        rest.strip_prefix("\r\n")?
     };
     // Find closing fence — must appear at the start of a line.
     let end = rest.find("\n---").or_else(|| rest.find("\r\n---"))?;
