@@ -1,0 +1,14 @@
+name = "test-with-rules"
+version = "0.1.0"
+description = "Integration-test template with folder-rules.toml — tests mechanical folder renames"
+
+[folder_rules]
+shape = "numbered-tiers"
+
+[frontmatter]
+schema = "frontmatter.schema.json"
+
+[invariants]
+index_required = true
+gaps_folder = "41-gaps"
+atomic_file_gate = false

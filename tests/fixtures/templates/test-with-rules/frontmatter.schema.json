@@ -1,0 +1,17 @@
+{
+  "required": ["type", "schema_version"],
+  "properties": {
+    "title": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["identity", "reference", "index", "analysis"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "draft", "archived"]
+    },
+    "schema_version": { "type": "integer" },
+    "created": { "type": "string" },
+    "updated": { "type": "string" }
+  }
+}
