@@ -75,9 +75,16 @@ fn clean_baseline_produces_empty_main_plan() {
     let output = canon_dir().join("target/test-align-clean-main.toml");
 
     let (code, out_str, err_str) = run_align(&corpus, &output);
-    assert_eq!(code, 0, "expected exit 0 for clean corpus; err={err_str}; out={out_str}");
+    assert_eq!(
+        code, 0,
+        "expected exit 0 for clean corpus; err={err_str}; out={out_str}"
+    );
 
-    assert!(output.is_file(), "main plan not written to {}", output.display());
+    assert!(
+        output.is_file(),
+        "main plan not written to {}",
+        output.display()
+    );
     let plan_content = std::fs::read_to_string(&output).unwrap();
     assert!(plan_content.starts_with("version = \"1\""));
     // No structural ops expected.
@@ -99,17 +106,19 @@ fn clean_baseline_produces_empty_fm_plan() {
     let fm_path = output.with_extension("").with_extension("fm-plan.toml");
     // Derived FM path: "test-align-clean-fm-main.fm-plan.toml"
     let fm_path2 = {
-        let stem = output
-            .file_stem()
+        let stem = output.file_stem().unwrap().to_string_lossy().to_string();
+        output
+            .parent()
             .unwrap()
-            .to_string_lossy()
-            .to_string();
-        output.parent().unwrap().join(format!("{}.fm-plan.toml", stem))
+            .join(format!("{}.fm-plan.toml", stem))
     };
     let actual_fm = if fm_path.is_file() { fm_path } else { fm_path2 };
     assert!(actual_fm.is_file(), "FM plan not written");
     let fm_content = std::fs::read_to_string(&actual_fm).unwrap();
-    assert!(!fm_content.contains("[[ops]]"), "clean corpus should have no FM ops");
+    assert!(
+        !fm_content.contains("[[ops]]"),
+        "clean corpus should have no FM ops"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -124,7 +133,10 @@ fn drift_baseline_unnumbered_folders_produce_move_ops() {
 
     let (code, out_str, err_str) = run_align(&corpus, &output);
     // Exit 1 expected: drift found.
-    assert!(code == 1 || code == 0, "unexpected error; err={err_str}; out={out_str}");
+    assert!(
+        code == 1 || code == 0,
+        "unexpected error; err={err_str}; out={out_str}"
+    );
 
     let plan_content = std::fs::read_to_string(&output).unwrap();
     // The unnumbered-drift corpus has "analysis" and "identity" folders.
@@ -146,7 +158,10 @@ fn drift_baseline_missing_frontmatter_produces_fm_ops() {
 
     let fm_path = {
         let stem = output.file_stem().unwrap().to_string_lossy().to_string();
-        output.parent().unwrap().join(format!("{}.fm-plan.toml", stem))
+        output
+            .parent()
+            .unwrap()
+            .join(format!("{}.fm-plan.toml", stem))
     };
     assert!(fm_path.is_file(), "FM plan not written");
     let fm_content = std::fs::read_to_string(&fm_path).unwrap();
@@ -177,8 +192,7 @@ fn roundtrip_move_ops_match_reference_renames() {
     let plan_emitter = MechanicalPlanEmitter::new(&judgment_emitter);
 
     // Run audit directly to get drift.
-    let drift = canon_core::audit::run_audit(&corpus, &template)
-        .expect("audit must succeed");
+    let drift = canon_core::audit::run_audit(&corpus, &template).expect("audit must succeed");
 
     let emission = plan_emitter
         .emit_with_root(&corpus, &drift, &template, Some(&canon_dir()))
@@ -256,7 +270,13 @@ fn boundary_audit_canon_core_has_no_closed_layer_symbols() {
     // Build the open binary in debug mode.
     let manifest = canon_dir().join("Cargo.toml");
     let build_status = std::process::Command::new("cargo")
-        .args(["build", "--manifest-path", manifest.to_str().unwrap(), "--bin", "canon"])
+        .args([
+            "build",
+            "--manifest-path",
+            manifest.to_str().unwrap(),
+            "--bin",
+            "canon",
+        ])
         .status();
 
     match build_status {
@@ -272,7 +292,10 @@ fn boundary_audit_canon_core_has_no_closed_layer_symbols() {
 
     let binary = canon_dir().join("target/debug/canon");
     if !binary.is_file() {
-        eprintln!("WARNING: binary not found at {}; skipping nm check", binary.display());
+        eprintln!(
+            "WARNING: binary not found at {}; skipping nm check",
+            binary.display()
+        );
         return;
     }
 
@@ -283,7 +306,8 @@ fn boundary_audit_canon_core_has_no_closed_layer_symbols() {
     match nm_output {
         Ok(out) => {
             let symbols = String::from_utf8_lossy(&out.stdout);
-            let closed_count = symbols.lines()
+            let closed_count = symbols
+                .lines()
                 .filter(|l| l.contains("canon_judgment"))
                 .count();
             assert_eq!(

@@ -102,9 +102,8 @@ impl<'a> MechanicalPlanEmitter<'a> {
 
         // The "root" to strip when producing plan paths.
         // Prefer workspace_root; fall back to corpus_root's parent.
-        let path_root: &Path = workspace_root.unwrap_or_else(|| {
-            corpus_root.parent().unwrap_or(corpus_root)
-        });
+        let path_root: &Path =
+            workspace_root.unwrap_or_else(|| corpus_root.parent().unwrap_or(corpus_root));
 
         let corpus_name = corpus_root
             .file_name()
@@ -132,9 +131,7 @@ impl<'a> MechanicalPlanEmitter<'a> {
                     if let Some(numbered) = folder_map.get(&folder_name) {
                         // Mechanical rename: target number is known from folder-rules.toml.
                         // src is the root-relative path to the current folder.
-                        let src = rel
-                            .clone()
-                            .unwrap_or_else(|| path_display(&entry.path));
+                        let src = rel.clone().unwrap_or_else(|| path_display(&entry.path));
                         let parent = entry
                             .path
                             .parent()
@@ -341,9 +338,7 @@ mod tests {
             tier: crate::template::TemplateTier::BuiltIn,
             dir: None,
         };
-        let emission = emitter
-            .emit(Path::new("/corpus"), &[], &template)
-            .unwrap();
+        let emission = emitter.emit(Path::new("/corpus"), &[], &template).unwrap();
         assert!(emission.main_plan.is_empty());
         assert!(emission.fm_plan.is_empty());
         assert!(emission.gap_rows.is_empty());
@@ -362,7 +357,9 @@ mod tests {
             DriftCategory::GraduationCandidate,
             "file exceeds line threshold",
         )];
-        let emission = emitter.emit(Path::new("/corpus"), &drift, &template).unwrap();
+        let emission = emitter
+            .emit(Path::new("/corpus"), &drift, &template)
+            .unwrap();
         assert!(emission.main_plan.is_empty());
         assert_eq!(emission.gap_rows.len(), 1);
         assert_eq!(
@@ -384,7 +381,9 @@ mod tests {
             DriftCategory::FrontmatterRequiredMissing,
             "required field 'schema_version' is absent",
         )];
-        let emission = emitter.emit(Path::new("/corpus"), &drift, &template).unwrap();
+        let emission = emitter
+            .emit(Path::new("/corpus"), &drift, &template)
+            .unwrap();
         assert_eq!(emission.fm_plan.ops.len(), 1);
         match &emission.fm_plan.ops[0] {
             FmPlanOp::AddField { field, .. } => assert_eq!(field, "schema_version"),
@@ -405,7 +404,9 @@ mod tests {
             DriftCategory::UnknownFieldInfo,
             "field 'custom_field' is not defined in the frontmatter schema",
         )];
-        let emission = emitter.emit(Path::new("/corpus"), &drift, &template).unwrap();
+        let emission = emitter
+            .emit(Path::new("/corpus"), &drift, &template)
+            .unwrap();
         assert!(emission.main_plan.is_empty());
         assert!(emission.fm_plan.is_empty());
         assert!(emission.gap_rows.is_empty());
@@ -509,7 +510,10 @@ layer = "universal"
             .unwrap();
         assert!(emission.main_plan.is_empty());
         assert_eq!(emission.gap_rows.len(), 1);
-        assert_eq!(emission.gap_rows[0].category, JudgmentCategory::IdAssignment);
+        assert_eq!(
+            emission.gap_rows[0].category,
+            JudgmentCategory::IdAssignment
+        );
     }
 
     fn minimal_manifest() -> crate::template::TemplateManifest {

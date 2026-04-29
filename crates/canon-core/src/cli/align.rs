@@ -103,17 +103,23 @@ pub fn run_impl(
     let judgment_emitter = DefaultJudgmentEmitter;
     let plan_emitter = MechanicalPlanEmitter::new(&judgment_emitter);
 
-    let emission = match plan_emitter.emit_with_root(&corpus_path, &drift, &template, Some(workspace_root)) {
-        Ok(e) => e,
-        Err(e) => {
-            let _ = writeln!(err, "error: {}", e);
-            return 2;
-        }
-    };
+    let emission =
+        match plan_emitter.emit_with_root(&corpus_path, &drift, &template, Some(workspace_root)) {
+            Ok(e) => e,
+            Err(e) => {
+                let _ = writeln!(err, "error: {}", e);
+                return 2;
+            }
+        };
 
     // Write main plan.
     if let Err(e) = plan_emitter.write_main_plan(&emission, &output_path) {
-        let _ = writeln!(err, "error writing plan to '{}': {}", output_path.display(), e);
+        let _ = writeln!(
+            err,
+            "error writing plan to '{}': {}",
+            output_path.display(),
+            e
+        );
         return 2;
     }
 
@@ -156,7 +162,11 @@ pub fn run_impl(
         }
     }
 
-    if blocking { 1 } else { 0 }
+    if blocking {
+        1
+    } else {
+        0
+    }
 }
 
 pub fn print_help(out: &mut dyn Write) {
