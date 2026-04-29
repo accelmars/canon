@@ -1,3 +1,4 @@
+pub mod align;
 pub mod audit;
 
 use audit::OutputFormat;
@@ -21,10 +22,11 @@ pub fn run_with_io(
     };
     match subcommand.as_str() {
         "audit" => parse_audit(&args[1..], out, err),
+        "align" => parse_align(&args[1..], out, err),
         other => {
             let _ = writeln!(
                 err,
-                "canon: unknown subcommand '{}'. Try 'canon audit --help'.",
+                "canon: unknown subcommand '{}'. Try 'canon audit --help' or 'canon align --help'.",
                 other
             );
             2
@@ -98,6 +100,81 @@ fn parse_audit(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std:
     };
 
     audit::run(&corpus, &tmpl, &format, out, err)
+}
+
+fn parse_align(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std::io::Write) -> i32 {
+    let mut corpus_path: Option<String> = None;
+    let mut template: Option<String> = None;
+    let mut output: Option<String> = None;
+    let mut fm_output: Option<String> = None;
+    let mut i = 0;
+
+    while i < args.len() {
+        match args[i].as_str() {
+            "--template" | "-t" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --template requires a value");
+                    return 2;
+                }
+                template = Some(args[i].clone());
+            }
+            "--output" | "-o" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --output requires a value");
+                    return 2;
+                }
+                output = Some(args[i].clone());
+            }
+            "--frontmatter-output" => {
+                i += 1;
+                if i >= args.len() {
+                    let _ = writeln!(err, "error: --frontmatter-output requires a value");
+                    return 2;
+                }
+                fm_output = Some(args[i].clone());
+            }
+            "--help" | "-h" => {
+                align::print_help(out);
+                return 0;
+            }
+            arg if !arg.starts_with('-') => {
+                if corpus_path.is_some() {
+                    let _ = writeln!(
+                        err,
+                        "error: unexpected positional argument '{}' (corpus-path already set)",
+                        arg
+                    );
+                    return 2;
+                }
+                corpus_path = Some(arg.to_string());
+            }
+            other => {
+                let _ = writeln!(err, "error: unknown flag '{}'", other);
+                return 2;
+            }
+        }
+        i += 1;
+    }
+
+    let Some(corpus) = corpus_path else {
+        let _ = writeln!(err, "error: <corpus-path> is required");
+        align::print_help(err);
+        return 2;
+    };
+    let Some(tmpl) = template else {
+        let _ = writeln!(err, "error: --template is required");
+        align::print_help(err);
+        return 2;
+    };
+    let Some(out_path) = output else {
+        let _ = writeln!(err, "error: --output is required");
+        align::print_help(err);
+        return 2;
+    };
+
+    align::run(&corpus, &tmpl, &out_path, fm_output.as_deref(), out, err)
 }
 
 fn print_audit_help(out: &mut dyn std::io::Write) {

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CFC-201 — `canon align --output` (mechanical anchor-plan emission with closed-layer reservation)
+
+- `canon align <corpus-path> --template <name|path> --output <plan.toml> [--frontmatter-output <fm-plan.toml>]`: consumes a drift report (CFC-101) and emits an anchor-compatible structural TOML plan for folder renames/creates plus a frontmatter migration sibling plan.
+- Exit codes: 0 = no drift, 1 = drift found (plan written), 2 = error.
+- `canon-core::plan` module: `MechanicalPlanEmitter`, `JudgmentEmitter` trait (open/closed boundary), `DefaultJudgmentEmitter` (gap-report-only open stub), `MainPlan`/`MainPlanOp`, `FmPlan`/`FmPlanOp`, `GapReportRow`, `JudgmentCase`.
+- `MainPlanOp`: `CreateDir { path }` and `Move { src, dst }` — anchor plan schema v1 compatible.
+- `FmPlanOp`: `AddField`/`SetField` — consumed by `anchor frontmatter migrate` (AENG-006, sibling project).
+- `JudgmentEmitter` trait: open/closed seam. Closed impl (`canon_judgment::StubJudgmentEmitter`) gap-reports all judgment cases in v1 per Rule 6 (no AI auto-resolution).
+- FolderShape drift → `Move` op when folder-rules.toml has a reverse mapping; otherwise `IdAssignment` gap row.
+- Frontmatter drift → FM plan ops (`AddField`/`SetField` with `FIXME` placeholder values for human review).
+- Graduation/ContentSplit drift → `GraduationBoundary` gap rows.
+- Plan paths emitted workspace-root-relative so `anchor plan validate` resolves src paths correctly.
+- Atomic writes via write-to-temp-then-rename; deterministic TOML output (stable op ordering).
+- `tests/align_roundtrip.rs`: 9 integration tests — clean baseline, drift baseline, round-trip op equivalence, `anchor plan validate` cross-check, boundary audit (no `canon_judgment` symbols in open binary), determinism.
+
+
 ### Added — CFC-101 — canon audit subcommand (template-driven read-only diff)
 
 - `canon audit <corpus-path> --template <name|path> [--format table|json|markdown]`: walks a corpus directory, loads a structure template via the CFC-050 loader, and reports all drift against that template's folder rules, frontmatter schema, and invariants.

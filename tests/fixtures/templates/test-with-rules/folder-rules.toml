@@ -1,0 +1,18 @@
+# folder-rules.toml — test-with-rules template
+# Minimal category registry for integration tests.
+
+[meta]
+source_of_truth = "tests/fixtures/templates/test-with-rules/manifest.toml"
+schema_version = 1
+
+[[categories]]
+number = "01"
+folder = "01-identity"
+what = "Identity"
+layer = "universal"
+
+[[categories]]
+number = "32"
+folder = "32-analysis"
+what = "Analysis"
+layer = "universal"
