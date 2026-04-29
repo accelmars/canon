@@ -113,7 +113,11 @@ impl TemplateLoader {
     /// (the higher-tier template is shown instead).
     pub fn list_all(&self) -> Vec<ListedTemplate> {
         let mut out = Vec::new();
-        collect_dir_templates(&self.workspace_templates_dir, TemplateTier::Workspace, &mut out);
+        collect_dir_templates(
+            &self.workspace_templates_dir,
+            TemplateTier::Workspace,
+            &mut out,
+        );
         collect_dir_templates(&self.user_templates_dir, TemplateTier::User, &mut out);
 
         let higher_tier_names: HashSet<String> = out.iter().map(|t| t.name.clone()).collect();
@@ -171,7 +175,11 @@ fn collect_dir_templates(dir: &Path, tier: TemplateTier, out: &mut Vec<ListedTem
         // Rule 12: use file_type(), not path.is_dir(), to avoid following symlinks.
         if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
             let path = entry.path();
-            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
             let manifest_path = path.join("manifest.toml");
             if let Ok(content) = fs::read_to_string(&manifest_path) {
                 if let Ok(m) = parse_manifest(&content, &name) {

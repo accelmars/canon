@@ -2,7 +2,7 @@ pub mod loader;
 pub mod manifest;
 pub mod validate;
 
-pub use loader::{ListedTemplate, LoadedTemplate, TemplateTier, TemplateLoader};
+pub use loader::{ListedTemplate, LoadedTemplate, TemplateLoader, TemplateTier};
 pub use manifest::{
     FolderRules, FolderShape, FrontmatterRef, Invariants, NamingConventions, TemplateManifest,
 };
@@ -14,13 +14,19 @@ use std::path::PathBuf;
 pub enum TemplateError {
     /// Template name was not found in any resolution tier.
     /// The `searched` list names every path that was checked.
-    NotFound { name: String, searched: Vec<PathBuf> },
+    NotFound {
+        name: String,
+        searched: Vec<PathBuf>,
+    },
 
     /// `manifest.toml` could not be parsed or is structurally invalid.
     Malformed { source: String, error: String },
 
     /// Template references a schema file that does not exist on disk.
-    MissingSchema { template: String, schema_path: PathBuf },
+    MissingSchema {
+        template: String,
+        schema_path: PathBuf,
+    },
 
     /// Filesystem I/O failure.
     Io(std::io::Error),
@@ -45,7 +51,10 @@ impl fmt::Display for TemplateError {
             TemplateError::Malformed { source, error } => {
                 write!(f, "malformed template '{source}': {error}")
             }
-            TemplateError::MissingSchema { template, schema_path } => {
+            TemplateError::MissingSchema {
+                template,
+                schema_path,
+            } => {
                 write!(
                     f,
                     "template '{template}' references schema '{}' which does not exist",
