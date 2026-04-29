@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CFC-301 — `canon align --apply` orchestrator (audit + plan + apply via anchor + gap-report formatter)
+
+- `canon align <corpus-path> --template <name|path> --apply [--gap-report-dir <path>]`: drives the full canonicalization pipeline end-to-end.
+- Default is dry-run (prints plan summary + gap-report preview; nothing written to disk). `--apply` is opt-in (fail-closed-defaults).
+- Pipeline: Audit → Plan emit → Anchor capability check → `anchor apply` (main plan) → `anchor frontmatter migrate` (FM plan) → Gap-report writeout → Re-audit (post-apply consistency check).
+- `canon-core::orchestrator` module: `run_pipeline`, `OrchestratorConfig`, `OrchestratorOutcome`, `StepOutcome` enum (typed; R9).
+- `canon-core::orchestrator::AnchorRunner` trait: `check_frontmatter_capability`, `run_apply`, `run_frontmatter_migrate`. `DefaultAnchorRunner` shells out via `Command::new("anchor")`. `MockAnchorRunner` for test isolation.
+- `check_anchor_frontmatter()`: verifies `anchor frontmatter --help` exits 0 before `--apply` mode; error names AENG-006 for operator clarity.
+- `canon-core::gap_report::GapReportFormatter`: writes one `CANON-NNN-<slug>.md` per `GapReportRow` to `<gap-dir>/`; scans existing files to continue NNN sequence across runs (never overwrites).
+- Gap file frontmatter: `type: gap`, `engine: canon`, `category` (per `template-canonicalization.md` taxonomy: `graduation` / `type-ambiguous` / `engine-class` / `id-assignment`), `priority`, `created`, `source: canon-template-architecture-CFC-301`.
+- Anchor capability check fires before any `--apply` invocation; error message names AENG-006.
+- Atomic counter for temp plan files ensures parallel test safety.
+- `tests/align_apply_pipeline.rs`: 6 integration tests — dry-run (nothing written to disk), apply on drift fixture (gap file produced), idempotence on clean baseline, anchor-missing error path (AENG-006), apply failure propagation (AENG-002 diagnostic captured), gap-report naming continuation across runs.
+
 ### Added — CFC-201 — `canon align --output` (mechanical anchor-plan emission with closed-layer reservation)
 
 - `canon align <corpus-path> --template <name|path> --output <plan.toml> [--frontmatter-output <fm-plan.toml>]`: consumes a drift report (CFC-101) and emits an anchor-compatible structural TOML plan for folder renames/creates plus a frontmatter migration sibling plan.
