@@ -28,6 +28,10 @@ authors.workspace = true
 repository.workspace = true
 description = "Canon canonicalization CLI"
 
+[[bin]]
+name = "canon"
+path = "src/main.rs"
+
 [dependencies]
 canon-core = { workspace = true }
 
