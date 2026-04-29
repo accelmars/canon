@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 All notable changes to this project will be documented in this file.
 
 
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+
 
 ### Added — CFC-302 — `canon template list/show/validate/install`
 
