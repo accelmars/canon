@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-01
+
+### Features
+- Root `--version` / `-V` and `--help` / `-h` flags; no-subcommand now prints help instead of error
+
 ### Bug Fixes
 - Regenerate release workflow from dist 0.31.0 ([#12](https://github.com/accelmars/canon/pull/12))
 
