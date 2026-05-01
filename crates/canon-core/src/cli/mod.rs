@@ -19,13 +19,21 @@ pub fn run_with_io(
     err: &mut dyn std::io::Write,
 ) -> i32 {
     let Some(subcommand) = args.first() else {
-        let _ = writeln!(err, "canon: no subcommand given. Try 'canon audit --help'.");
-        return 2;
+        print_root_help(out);
+        return 0;
     };
     match subcommand.as_str() {
         "audit" => parse_audit(&args[1..], out, err),
         "align" => parse_align(&args[1..], out, err),
         "template" => template::run(&args[1..], out, err),
+        "--version" | "-V" => {
+            let _ = writeln!(out, "canon {}", env!("CARGO_PKG_VERSION"));
+            0
+        }
+        "--help" | "-h" | "help" => {
+            print_root_help(out);
+            0
+        }
         other => {
             let _ = writeln!(
                 err,
@@ -202,6 +210,14 @@ fn parse_align(args: &[String], out: &mut dyn std::io::Write, err: &mut dyn std:
             err,
         )
     }
+}
+
+fn print_root_help(out: &mut dyn std::io::Write) {
+    let _ = writeln!(
+        out,
+        "canon {}\n\nUSAGE:\n  canon <COMMAND>\n\nCOMMANDS:\n  audit     Read-only drift report against a structure template\n  align     Emit a structural plan (or apply it via anchor)\n  template  Manage installed templates\n\nOPTIONS:\n  -V, --version  Print version\n  -h, --help     Print this help",
+        env!("CARGO_PKG_VERSION")
+    );
 }
 
 fn print_audit_help(out: &mut dyn std::io::Write) {
