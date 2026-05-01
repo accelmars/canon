@@ -5,3 +5,5 @@ publish = false
 # cargo-dist owns GitHub Release creation (with binary assets).
 # release-plz creates git tags only; GitHub Releases are created by cargo-dist.
 git_release_enable = false
+# Enforce package-prefixed tags: accelmars-canon-v{version}
+git_tag_name = "{{ package }}-v{{ version }}"
