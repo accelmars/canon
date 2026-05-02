@@ -290,7 +290,11 @@ fn load_folder_number_map_with_class(
         }
     }
     if let Some(class) = engine_class {
-        if let Some(entry) = parsed.engine_class_extensions.iter().find(|e| e.class == class) {
+        if let Some(entry) = parsed
+            .engine_class_extensions
+            .iter()
+            .find(|e| e.class == class)
+        {
             for cat in &entry.categories {
                 if let Some(name) = strip_number_prefix(&cat.folder) {
                     map.entry(name).or_insert_with(|| cat.folder.clone());
@@ -632,7 +636,11 @@ categories = [
             message: "directory 'custom' does not follow numbered-tier naming".to_string(),
         }];
         let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
-        assert_eq!(emission.main_plan.ops.len(), 1, "known class should produce move op, not gap");
+        assert_eq!(
+            emission.main_plan.ops.len(),
+            1,
+            "known class should produce move op, not gap"
+        );
         match &emission.main_plan.ops[0] {
             MainPlanOp::Move { dst, .. } => assert!(dst.ends_with("15-custom"), "dst={dst}"),
             other => panic!("expected Move, got {:?}", other),
@@ -666,8 +674,15 @@ categories = [
         }];
         let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
         assert!(emission.main_plan.is_empty());
-        assert_eq!(emission.gap_rows.len(), 1, "unknown class should fall back to gap row");
-        assert_eq!(emission.gap_rows[0].category, JudgmentCategory::IdAssignment);
+        assert_eq!(
+            emission.gap_rows.len(),
+            1,
+            "unknown class should fall back to gap row"
+        );
+        assert_eq!(
+            emission.gap_rows[0].category,
+            JudgmentCategory::IdAssignment
+        );
     }
 
     #[test]
