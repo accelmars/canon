@@ -94,10 +94,12 @@ impl<'a> MechanicalPlanEmitter<'a> {
         workspace_root: Option<&Path>,
     ) -> Result<PlanEmission, EmitError> {
         // Load folder number map from template's folder-rules.toml if available.
+        // Read engine class from corpus identity index to merge class-specific slots.
+        let engine_class = read_engine_class(corpus_root);
         let folder_map = template
             .dir
             .as_deref()
-            .map(load_folder_number_map)
+            .map(|dir| load_folder_number_map_with_class(dir, engine_class.as_deref()))
             .unwrap_or_default();
 
         // The "root" to strip when producing plan paths.
@@ -242,6 +244,8 @@ impl<'a> MechanicalPlanEmitter<'a> {
 struct FolderRulesFile {
     #[serde(default)]
     categories: Vec<CategoryEntry>,
+    #[serde(default)]
+    engine_class_extensions: Vec<EngineClassEntry>,
 }
 
 #[derive(Deserialize)]
@@ -249,12 +253,27 @@ struct CategoryEntry {
     folder: String,
 }
 
-/// Load the folder number map from `<template_dir>/folder-rules.toml`.
+#[derive(Deserialize)]
+struct EngineClassEntry {
+    class: String,
+    #[serde(default)]
+    categories: Vec<EngineClassCategory>,
+}
+
+#[derive(Deserialize)]
+struct EngineClassCategory {
+    folder: String,
+}
+
+/// Load the folder number map, optionally merging engine-class extension slots.
 ///
-/// Returns a map from un-numbered folder name to numbered folder name.
-/// E.g., `"analysis"` → `"32-analysis"`.
-/// Returns an empty map if the file does not exist or cannot be parsed.
-fn load_folder_number_map(template_dir: &Path) -> HashMap<String, String> {
+/// Base map from `[[categories]]` is loaded first. If `engine_class` is `Some`,
+/// the matching `[[engine_class_extensions]]` entry is looked up and its folder
+/// slots are merged in. Base entries are never overwritten.
+fn load_folder_number_map_with_class(
+    template_dir: &Path,
+    engine_class: Option<&str>,
+) -> HashMap<String, String> {
     let path = template_dir.join("folder-rules.toml");
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
@@ -265,17 +284,63 @@ fn load_folder_number_map(template_dir: &Path) -> HashMap<String, String> {
         Err(_) => return HashMap::new(),
     };
     let mut map = HashMap::new();
-    for cat in parsed.categories {
-        // Folder name is like "32-analysis"; strip the "NN-" prefix to get "analysis".
-        if let Some(idx) = cat.folder.find('-') {
-            let prefix = &cat.folder[..idx];
-            if prefix.len() == 2 && prefix.bytes().all(|b| b.is_ascii_digit()) {
-                let name_part = cat.folder[idx + 1..].to_string();
-                map.insert(name_part, cat.folder);
+    for cat in &parsed.categories {
+        if let Some(name) = strip_number_prefix(&cat.folder) {
+            map.insert(name, cat.folder.clone());
+        }
+    }
+    if let Some(class) = engine_class {
+        if let Some(entry) = parsed.engine_class_extensions.iter().find(|e| e.class == class) {
+            for cat in &entry.categories {
+                if let Some(name) = strip_number_prefix(&cat.folder) {
+                    map.entry(name).or_insert_with(|| cat.folder.clone());
+                }
             }
         }
     }
     map
+}
+
+/// Read the engine class from `corpus_root/01-identity/_INDEX.md` frontmatter.
+///
+/// Returns `None` if the file is absent, unreadable, or has no `class:` field.
+fn read_engine_class(corpus_root: &Path) -> Option<String> {
+    let index_path = corpus_root.join("01-identity/_INDEX.md");
+    let content = std::fs::read_to_string(&index_path).ok()?;
+    let mut in_frontmatter = false;
+    let mut started = false;
+    for line in content.lines() {
+        if line.trim() == "---" {
+            if !started {
+                started = true;
+                in_frontmatter = true;
+                continue;
+            } else if in_frontmatter {
+                break;
+            }
+        }
+        if in_frontmatter {
+            if let Some(rest) = line.strip_prefix("class:") {
+                let class = rest.trim().to_string();
+                if !class.is_empty() {
+                    return Some(class);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Strip the `NN-` numeric prefix from a folder name, returning the name part.
+/// Returns `None` if the folder does not start with a two-digit number prefix.
+fn strip_number_prefix(folder: &str) -> Option<String> {
+    let idx = folder.find('-')?;
+    let prefix = &folder[..idx];
+    if prefix.len() == 2 && prefix.bytes().all(|b| b.is_ascii_digit()) {
+        Some(folder[idx + 1..].to_string())
+    } else {
+        None
+    }
 }
 
 /// Extract the field name from a frontmatter drift message.
@@ -454,7 +519,7 @@ what = "Identity"
 layer = "universal"
 "#;
         std::fs::write(dir.path().join("folder-rules.toml"), rules).unwrap();
-        let map = load_folder_number_map(dir.path());
+        let map = load_folder_number_map_with_class(dir.path(), None);
         assert_eq!(map.get("analysis"), Some(&"32-analysis".to_string()));
         assert_eq!(map.get("identity"), Some(&"01-identity".to_string()));
     }
@@ -514,6 +579,154 @@ layer = "universal"
             emission.gap_rows[0].category,
             JudgmentCategory::IdAssignment
         );
+    }
+
+    fn fixture_rules_with_extension() -> String {
+        r#"
+[[categories]]
+number = "01"
+folder = "01-identity"
+what = "Identity"
+layer = "universal"
+
+[[engine_class_extensions]]
+class = "test-class"
+categories = [
+  { number = "15", folder = "15-custom" },
+]
+"#
+        .to_string()
+    }
+
+    fn write_identity_index(corpus_root: &std::path::Path, class: Option<&str>) {
+        std::fs::create_dir_all(corpus_root.join("01-identity")).unwrap();
+        let body = match class {
+            Some(c) => format!("---\ntype: index\nclass: {c}\n---\n"),
+            None => "---\ntype: index\n---\n".to_string(),
+        };
+        std::fs::write(corpus_root.join("01-identity/_INDEX.md"), body).unwrap();
+    }
+
+    #[test]
+    fn engine_class_extensions_known_class_produces_move_op() {
+        use tempfile::TempDir;
+        let template_dir = TempDir::new().unwrap();
+        let corpus_dir = TempDir::new().unwrap();
+
+        std::fs::write(
+            template_dir.path().join("folder-rules.toml"),
+            fixture_rules_with_extension(),
+        )
+        .unwrap();
+        write_identity_index(corpus_dir.path(), Some("test-class"));
+
+        let emitter = MechanicalPlanEmitter::new(&DefaultJudgmentEmitter);
+        let template = crate::template::LoadedTemplate {
+            manifest: minimal_manifest(),
+            tier: crate::template::TemplateTier::Workspace,
+            dir: Some(template_dir.path().to_owned()),
+        };
+        let drift = vec![DriftEntry {
+            path: corpus_dir.path().join("custom"),
+            category: DriftCategory::FolderShape,
+            message: "directory 'custom' does not follow numbered-tier naming".to_string(),
+        }];
+        let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
+        assert_eq!(emission.main_plan.ops.len(), 1, "known class should produce move op, not gap");
+        match &emission.main_plan.ops[0] {
+            MainPlanOp::Move { dst, .. } => assert!(dst.ends_with("15-custom"), "dst={dst}"),
+            other => panic!("expected Move, got {:?}", other),
+        }
+        assert!(emission.gap_rows.is_empty());
+    }
+
+    #[test]
+    fn engine_class_extensions_unknown_class_produces_gap_row() {
+        use tempfile::TempDir;
+        let template_dir = TempDir::new().unwrap();
+        let corpus_dir = TempDir::new().unwrap();
+
+        std::fs::write(
+            template_dir.path().join("folder-rules.toml"),
+            fixture_rules_with_extension(),
+        )
+        .unwrap();
+        write_identity_index(corpus_dir.path(), Some("unknown-class"));
+
+        let emitter = MechanicalPlanEmitter::new(&DefaultJudgmentEmitter);
+        let template = crate::template::LoadedTemplate {
+            manifest: minimal_manifest(),
+            tier: crate::template::TemplateTier::Workspace,
+            dir: Some(template_dir.path().to_owned()),
+        };
+        let drift = vec![DriftEntry {
+            path: corpus_dir.path().join("custom"),
+            category: DriftCategory::FolderShape,
+            message: "directory 'custom' does not follow numbered-tier naming".to_string(),
+        }];
+        let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
+        assert!(emission.main_plan.is_empty());
+        assert_eq!(emission.gap_rows.len(), 1, "unknown class should fall back to gap row");
+        assert_eq!(emission.gap_rows[0].category, JudgmentCategory::IdAssignment);
+    }
+
+    #[test]
+    fn engine_class_no_identity_index_uses_base_map_only() {
+        use tempfile::TempDir;
+        let template_dir = TempDir::new().unwrap();
+        let corpus_dir = TempDir::new().unwrap();
+
+        std::fs::write(
+            template_dir.path().join("folder-rules.toml"),
+            fixture_rules_with_extension(),
+        )
+        .unwrap();
+        // No 01-identity/_INDEX.md written — corpus_dir is empty.
+
+        let emitter = MechanicalPlanEmitter::new(&DefaultJudgmentEmitter);
+        let template = crate::template::LoadedTemplate {
+            manifest: minimal_manifest(),
+            tier: crate::template::TemplateTier::Workspace,
+            dir: Some(template_dir.path().to_owned()),
+        };
+        let drift = vec![DriftEntry {
+            path: corpus_dir.path().join("custom"),
+            category: DriftCategory::FolderShape,
+            message: "directory 'custom' does not follow numbered-tier naming".to_string(),
+        }];
+        // Must not panic; custom is not in base map → gap row.
+        let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
+        assert!(emission.main_plan.is_empty());
+        assert_eq!(emission.gap_rows.len(), 1);
+    }
+
+    #[test]
+    fn engine_class_identity_index_no_class_field_uses_base_map_only() {
+        use tempfile::TempDir;
+        let template_dir = TempDir::new().unwrap();
+        let corpus_dir = TempDir::new().unwrap();
+
+        std::fs::write(
+            template_dir.path().join("folder-rules.toml"),
+            fixture_rules_with_extension(),
+        )
+        .unwrap();
+        write_identity_index(corpus_dir.path(), None);
+
+        let emitter = MechanicalPlanEmitter::new(&DefaultJudgmentEmitter);
+        let template = crate::template::LoadedTemplate {
+            manifest: minimal_manifest(),
+            tier: crate::template::TemplateTier::Workspace,
+            dir: Some(template_dir.path().to_owned()),
+        };
+        let drift = vec![DriftEntry {
+            path: corpus_dir.path().join("custom"),
+            category: DriftCategory::FolderShape,
+            message: "directory 'custom' does not follow numbered-tier naming".to_string(),
+        }];
+        let emission = emitter.emit(corpus_dir.path(), &drift, &template).unwrap();
+        assert!(emission.main_plan.is_empty());
+        assert_eq!(emission.gap_rows.len(), 1, "no class field → gap row");
     }
 
     fn minimal_manifest() -> crate::template::TemplateManifest {
