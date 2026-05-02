@@ -17,6 +17,7 @@ serde_json = { version = "1" }
 serde_yaml = { version = "0.9" }
 toml = "0.8"
 walkdir = { version = "2" }
+chrono = { version = "0.4", features = ["clock"] }
 tempfile = { version = "3" }
 
 [package]

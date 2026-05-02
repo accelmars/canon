@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- CANON-001 — `canon align --apply` emits `_INDEX.md` stubs for numbered folders missing an index file; stub contains correct frontmatter, TOC pre-filled from folder contents, TODO marker for operator summary.
+
 ## [0.1.0] - 2026-05-01
 
 ### Features
