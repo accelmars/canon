@@ -60,7 +60,10 @@ fn toc_rows(dir: &Path) -> Vec<String> {
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
     names.sort();
-    names.iter().map(|n| format!("| [{n}](./{n}) | |")).collect()
+    names
+        .iter()
+        .map(|n| format!("| [{n}](./{n}) | |"))
+        .collect()
 }
 
 #[cfg(test)]
