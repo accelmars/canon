@@ -83,29 +83,21 @@ fn clean_baseline_run_audit_returns_no_blocking_entries() {
 }
 
 // ---------------------------------------------------------------------------
-// Drift baseline (gateway-engine — exits 1, has blocking drift)
+// Drift baseline (synthetic fixture — exits 1, has blocking drift)
 // ---------------------------------------------------------------------------
 
 #[test]
-fn drift_baseline_gateway_engine_exits_1() {
-    let gateway = workspace_root().join("accelmars-workspace/foundations/gateway-engine");
-    if !gateway.is_dir() {
-        eprintln!("gateway-engine not found at {:?} — skipping", gateway);
-        return;
-    }
-    let ws = workspace_root();
-    let mut out = Vec::<u8>::new();
-    let mut err = Vec::<u8>::new();
-    let code = run_impl(
-        gateway.to_str().unwrap(),
-        "accelmars-standard",
-        &OutputFormat::Table,
-        &ws,
-        &ws,
-        &mut out,
-        &mut err,
+fn drift_baseline_unnumbered_folder_exits_1() {
+    let corpus = fixtures_dir().join("gateway-drift");
+    let template = load_test_template();
+    let entries = run_audit(&corpus, &template).unwrap();
+    assert!(
+        entries
+            .iter()
+            .any(|e| e.category == DriftCategory::FolderShape),
+        "gateway-drift fixture must produce FolderShape drift for unnumbered providers/"
     );
-    assert_eq!(code, 1, "gateway-engine should have blocking drift");
+    assert_eq!(audit_fixture("gateway-drift", &OutputFormat::Table), 1);
 }
 
 // ---------------------------------------------------------------------------

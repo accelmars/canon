@@ -40,18 +40,22 @@ impl MainPlan {
         if let Some(d) = &self.description {
             out.push_str(&format!("description = {}\n", toml_string(d)));
         }
-        for op in &self.ops {
-            out.push('\n');
-            out.push_str("[[ops]]\n");
-            match op {
-                MainPlanOp::CreateDir { path } => {
-                    out.push_str("type = \"create_dir\"\n");
-                    out.push_str(&format!("path = {}\n", toml_string(path)));
-                }
-                MainPlanOp::Move { src, dst } => {
-                    out.push_str("type = \"move\"\n");
-                    out.push_str(&format!("src = {}\n", toml_string(src)));
-                    out.push_str(&format!("dst = {}\n", toml_string(dst)));
+        if self.ops.is_empty() {
+            out.push_str("ops = []\n");
+        } else {
+            for op in &self.ops {
+                out.push('\n');
+                out.push_str("[[ops]]\n");
+                match op {
+                    MainPlanOp::CreateDir { path } => {
+                        out.push_str("type = \"create_dir\"\n");
+                        out.push_str(&format!("path = {}\n", toml_string(path)));
+                    }
+                    MainPlanOp::Move { src, dst } => {
+                        out.push_str("type = \"move\"\n");
+                        out.push_str(&format!("src = {}\n", toml_string(src)));
+                        out.push_str(&format!("dst = {}\n", toml_string(dst)));
+                    }
                 }
             }
         }
@@ -197,7 +201,7 @@ mod tests {
     #[test]
     fn main_plan_renders_empty() {
         let plan = MainPlan::new(None);
-        assert_eq!(plan.render_toml(), "version = \"1\"\n");
+        assert_eq!(plan.render_toml(), "version = \"1\"\nops = []\n");
     }
 
     #[test]
