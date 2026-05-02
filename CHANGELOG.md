@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - CANON-001 — `canon align --apply` emits `_INDEX.md` stubs for numbered folders missing an index file; stub contains correct frontmatter, TOC pre-filled from folder contents, TODO marker for operator summary.
+- AENG-011 — `canon align` reads engine class from `01-identity/_INDEX.md` and auto-assigns engine-class folder IDs from `[[engine_class_extensions]]` in `folder-rules.toml`; eliminates `[IdAssignment]` gaps for known engine classes.
 
 ## [0.1.0] - 2026-05-01
 
