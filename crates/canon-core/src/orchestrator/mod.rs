@@ -32,6 +32,9 @@ pub enum StepOutcome {
         exit_code: i32,
         diagnostic: String,
     },
+    IndexStubsEmitted {
+        count: usize,
+    },
     AnchorFmMigrate {
         fm_plan_path: PathBuf,
     },
@@ -226,6 +229,18 @@ pub fn run_pipeline(config: &OrchestratorConfig, runner: &dyn AnchorRunner) -> O
     }
 
     // ------------------------------------------------------------------
+    // Index stubs — emit _INDEX.md for any numbered dir missing one
+    // ------------------------------------------------------------------
+    let engine_name = config
+        .corpus_path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let stub_count = crate::stub::emit_index_stubs(&config.corpus_path, &engine_name, &today);
+    steps.push(StepOutcome::IndexStubsEmitted { count: stub_count });
+
+    // ------------------------------------------------------------------
     // anchor frontmatter migrate
     // ------------------------------------------------------------------
     match runner.run_frontmatter_migrate(&fm_plan_path) {
@@ -349,6 +364,13 @@ pub fn print_pipeline_summary(outcome: &OrchestratorOutcome, out: &mut dyn std::
                     files_written,
                     gap_dir.display()
                 );
+            }
+            StepOutcome::IndexStubsEmitted { count } => {
+                if *count > 0 {
+                    let _ = writeln!(out, "  index stubs: {count} emitted");
+                } else {
+                    let _ = writeln!(out, "  index stubs: none needed");
+                }
             }
             StepOutcome::ReAudit { residual_drift } => {
                 if *residual_drift > 0 {
