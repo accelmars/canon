@@ -34,7 +34,7 @@ pub struct ListedTemplate {
 /// Built-in templates compiled into the binary as static strings.
 static COMPILED_BUILT_INS: &[(&str, &str)] = &[(
     "canon-default",
-    include_str!("../../../../templates/canon-default/manifest.toml"),
+    include_str!("../../templates/canon-default/manifest.toml"),
 )];
 
 /// Returns the production built-in registry as an owned Vec.
