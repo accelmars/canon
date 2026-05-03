@@ -11,7 +11,7 @@ repository = "https://github.com/accelmars/canon"
 
 [workspace.dependencies]
 # Alias keeps Rust code using canon_core:: unchanged; package name is accelmars-canon-core
-canon-core = { package = "accelmars-canon-core", path = "crates/canon-core" }
+canon-core = { package = "accelmars-canon-core", path = "crates/canon-core", version = "0.2.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 serde_yaml = { version = "0.9" }
